@@ -1,0 +1,17 @@
+export BASE_URL:=
+export AWS_ACCESS_KEY_ID:=
+export AWS_SECRET_ACCESS_KEY:=
+export APP_PORT:=
+export BUCKET_NAME:=
+export REGION_NAME:=
+
+
+run:
+	@go run main.go 
+
+test-html:
+	@go test ./... -coverprofile=cover.out && go tool cover -html=cover.out
+
+test:
+	@go test ./... -cover -v -covermode=count -coverprofile=coverage.out 2>&1 
+	@go tool cover -func=coverage.out
