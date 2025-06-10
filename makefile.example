@@ -4,6 +4,8 @@ export AWS_SECRET_ACCESS_KEY:=
 export APP_PORT:=
 export BUCKET_NAME:=
 export REGION_NAME:=
+export	LIMITER_THRESHOLD=1
+export	LIMITER_EXPIRED=12
 
 
 run:
@@ -15,3 +17,10 @@ test-html:
 test:
 	@go test ./... -cover -v -covermode=count -coverprofile=coverage.out 2>&1 
 	@go tool cover -func=coverage.out
+
+
+build:
+	@go build -o aws-s3-bucket-go
+
+swag:
+	@swag init -g main.go

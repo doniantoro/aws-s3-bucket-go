@@ -1,18 +1,21 @@
 package main
 
 import (
-	"context"
-	"log"
-	"os"
-
 	configApp "aws-s3-bucket/config"
 	uploadHttp "aws-s3-bucket/domain/upload/delivery/http"
 	uploadUsecase "aws-s3-bucket/domain/upload/usecase"
 	"aws-s3-bucket/shared/constant"
+	"context"
+	"log"
+	"os"
+	"strconv"
+	"time"
 
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"github.com/gofiber/contrib/swagger"
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/limiter"
 	"github.com/google/uuid"
 )
 
@@ -49,6 +52,30 @@ func main() {
 		}
 		return c.Next()
 	})
+	
+	limitThreshold, _ := strconv.Atoi(os.Getenv("LIMITER_THRESHOLD"))
+	limitExpired, _ := time.ParseDuration(os.Getenv("LIMITER_EXPIRED"))
+
+	app.Use(limiter.New(limiter.Config{
+		Max:               limitThreshold,
+		Expiration:        limitExpired,
+		LimiterMiddleware: limiter.FixedWindow{},
+		LimitReached: func(c *fiber.Ctx) error {
+			return c.SendStatus(fiber.StatusTooManyRequests)
+		},
+		KeyGenerator: func(c *fiber.Ctx) string {
+			return c.IP()
+		},
+	}))
+
+	app.Use(swagger.New(swagger.Config{
+		BasePath: "/api/v1/",
+		FilePath: "./docs/swagger.json",
+		Path:     "docs",
+		Title:    "Swagger API Docs",
+		CacheAge: 1,
+	}))
+
 	v1 := app.Group("/api/v1/")
 	validator := configApp.NewValidator()
 
