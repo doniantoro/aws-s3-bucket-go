@@ -24,7 +24,6 @@ type handler struct {
 }
 
 func NewHandler(route fiber.Router, usecase interfaces.UsecaseInterface, validator configApp.Validator) {
-
 	handler := handler{
 		usecase:   usecase,
 		validator: validator,
@@ -36,6 +35,14 @@ func NewHandler(route fiber.Router, usecase interfaces.UsecaseInterface, validat
 
 }
 
+// Integrator godoc
+// @Description  orchestrator to upload base64 to s3
+// @Produce json
+// @Param body body document.RequestUploadDocumentBase64 true "Body payload"
+// @Success 200 {object} dto.ApiResponse{data=document.ResponseUploadDocument}
+// @Failure 400 {object} dto.ApiResponse{error=dto.ErrorValidation}
+// @Failure 500 {object} dto.ApiResponse{}
+// @Router /api/v1/upload/base64 [post]
 func (h *handler) UploadBase64(c *fiber.Ctx) error {
 	var request document.RequestUploadDocumentBase64
 
@@ -80,6 +87,16 @@ func (h *handler) UploadBase64(c *fiber.Ctx) error {
 
 }
 
+// Integrator godoc
+// @Description  orchestrator to upload base64 to s3
+// @Produce json
+// @Param file formData file true "file document"
+// @Param document_key formData string true "key document" default(folder-in-s3)
+// @Param document_name formData string true "name document" default(example)
+// @Success 200 {object} dto.ApiResponse{data=document.ResponseUploadDocument}
+// @Failure 400 {object} dto.ApiResponse{error=dto.ErrorValidation}
+// @Failure 500 {object} dto.ApiResponse{}
+// @Router /api/v1/upload/file [post]
 func (h *handler) UploadFile(c *fiber.Ctx) error {
 
 	file, err := c.FormFile("file")
@@ -129,19 +146,29 @@ func (h *handler) UploadFile(c *fiber.Ctx) error {
 	})
 }
 
+// Integrator godoc
+// @Description  orchestrator to get base64 to s3
+// @Produce json
+// @Param type query string  false "type downloaded can be empty(file),downloaded and base64" default(base64)
+// @Param docKey path string true "document key" default(folder-in-s3)
+// @Param docName path string true "document name" default(example.png)
+// @Failure 200 {object} dto.ApiResponse{}
+// @Failure 500 {object} dto.ApiResponse{}
+// @Failure 400 {object} dto.ApiResponse{}
+// @Router /api/v1/download/{docKey}/{docName} [get]
 func (h *handler) GetFile(c *fiber.Ctx) error {
 
 	typeResponse := c.Query("type")
 	response, err := h.usecase.DownloadFile(c.Context(), fmt.Sprintf("%s/%s", c.Params("docKey"), c.Params("docName")))
-	defer response.Body.Close()
 	if err != nil {
-		log.Error("Error to get file")
+		log.Error("Error to get file :%s", err.Error())
 		return c.Status(http.StatusInternalServerError).JSON(dto.ApiResponse{
 			Code:       constant.STATUS_CODE_GENERAL_ERROR,
 			Message:    "Failed to get document",
 			ServerTime: time.Now().Format(time.RFC3339),
 		})
 	}
+	defer response.Body.Close()
 
 	var buf bytes.Buffer
 	tee := io.TeeReader(response.Body, &buf)
@@ -178,4 +205,3 @@ func (h *handler) GetFile(c *fiber.Ctx) error {
 	}
 
 }
-

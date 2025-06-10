@@ -1,0 +1,161 @@
+definitions:
+  document.RequestUploadDocumentBase64:
+    properties:
+      document_base64:
+        example: data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAAA3NCSVQICAjb4U/gAAAADElEQVQImWMwMTEBAAE8AJ1tV5pJAAAAAElFTkSuQmCC
+        type: string
+      document_key:
+        example: folder-in-s3
+        type: string
+      document_name:
+        example: example
+        type: string
+    required:
+    - document_base64
+    - document_key
+    - document_name
+    type: object
+  document.ResponseUploadDocument:
+    properties:
+      document_url:
+        type: string
+    type: object
+  dto.ApiResponse:
+    properties:
+      code:
+        type: string
+      data: {}
+      errors: {}
+      messages:
+        type: string
+      server_time:
+        type: string
+    type: object
+  dto.ErrorValidation:
+    properties:
+      message:
+        type: string
+      parameter:
+        type: string
+    type: object
+info:
+  contact: {}
+paths:
+  /api/v1/download/{docKey}/{docName}:
+    get:
+      description: orchestrator to get base64 to s3
+      parameters:
+      - default: base64
+        description: type downloaded can be empty(file),downloaded and base64
+        in: query
+        name: type
+        type: string
+      - default: folder-in-s3
+        description: document key
+        in: path
+        name: docKey
+        required: true
+        type: string
+      - default: example.png
+        description: document name
+        in: path
+        name: docName
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ApiResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ApiResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ApiResponse'
+  /api/v1/upload/base64:
+    post:
+      description: orchestrator to upload base64 to s3
+      parameters:
+      - description: Body payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/document.RequestUploadDocumentBase64'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/dto.ApiResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/document.ResponseUploadDocument'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            allOf:
+            - $ref: '#/definitions/dto.ApiResponse'
+            - properties:
+                error:
+                  $ref: '#/definitions/dto.ErrorValidation'
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ApiResponse'
+  /api/v1/upload/file:
+    post:
+      description: orchestrator to upload base64 to s3
+      parameters:
+      - description: file document
+        in: formData
+        name: file
+        required: true
+        type: file
+      - default: folder-in-s3
+        description: key document
+        in: formData
+        name: document_key
+        required: true
+        type: string
+      - default: example
+        description: name document
+        in: formData
+        name: document_name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/dto.ApiResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/document.ResponseUploadDocument'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            allOf:
+            - $ref: '#/definitions/dto.ApiResponse'
+            - properties:
+                error:
+                  $ref: '#/definitions/dto.ErrorValidation'
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ApiResponse'
+swagger: "2.0"
