@@ -9,6 +9,7 @@ import (
 	"log"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/config"
@@ -65,6 +66,9 @@ func main() {
 		},
 		KeyGenerator: func(c *fiber.Ctx) string {
 			return c.IP()
+		},
+		Next: func(c *fiber.Ctx) bool {
+			return strings.HasPrefix(c.Path(), "/api/v1/docs")
 		},
 	}))
 
