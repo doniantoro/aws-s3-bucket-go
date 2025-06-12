@@ -3,10 +3,10 @@ name: Build & Deploy Go App to EC2
 on:
   push:
     branches:
-      - main
+      - master
   pull_request:
     branches:
-      - main
+      - master
 
 jobs:
   build:
@@ -32,7 +32,7 @@ jobs:
   deploy:
     name: Deploy to EC2
     needs: build
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
 
     steps:
