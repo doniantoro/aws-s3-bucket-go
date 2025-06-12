@@ -89,9 +89,10 @@ func main() {
 	// Initialize the upload HTTP handler
 	uploadHttp.NewHandler(v1, multiUsecase, validator)
 
+	log.Printf("Server will be run on port %s", os.Getenv("APP_PORT"))
+
 	err = app.Listen(":" + os.Getenv("APP_PORT"))
 	if err != nil {
 		log.Fatal(err)
 	}
-	log.Printf("Server is running on port %s", os.Getenv("APP_PORT"))
 }
