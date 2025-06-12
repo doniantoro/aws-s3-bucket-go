@@ -22,11 +22,15 @@ jobs:
         with:
           go-version: '1.23'
 
-      - name: Build Go Binary
-        run: GOOS=linux GOARCH=amd64 go build -o myapp
-
       - name: Run Unit Tests
-        run: go test ./...
+        run: |
+        	go test ./... -cover -v -covermode=count -coverprofile=coverage.out 2>&1 
+	        go tool cover -func=coverage.out
+
+      - name: Build Go Binary
+        run: GOOS=linux GOARCH=amd64 go build -o aws-s3-bucket-go
+
+    
         
 
   deploy:
@@ -42,10 +46,10 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.21'
+          go-version: '1.23'
 
       - name: Build Go Binary
-        run: GOOS=linux GOARCH=amd64 go build -o myapp
+        run: GOOS=linux GOARCH=amd64 go build -o aws-s3-bucket-go
 
       - name: Setup SSH
         run: |
@@ -56,12 +60,12 @@ jobs:
 
       - name: Upload Binary to EC2
         run: |
-          scp ./myapp ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/home/${{ secrets.EC2_USER }}/myapp/myapp
+          scp ./aws-s3-bucket-go ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/home/${{ secrets.EC2_USER }}/go/src/aws-s3-bucket-go/aws-s3-bucket-go
 
       - name: Restart systemd service
         run: |
           ssh ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
             sudo systemctl daemon-reload
-            sudo systemctl restart myapp.service
-            sudo systemctl status myapp.service --no-pager
+            sudo systemctl restart aws-s3-bucket-go.service
+            sudo systemctl status aws-s3-bucket-go.service --no-pager
           EOF
