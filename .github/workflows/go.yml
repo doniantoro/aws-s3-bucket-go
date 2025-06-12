@@ -24,6 +24,7 @@ jobs:
 
       - name: Check Code Coverage Threshold
         run: |
+          go env -w GOEXPERIMENT=nocoverageredesign
           go test ./... -cover -v -covermode=count -coverprofile=coverage.out 2>&1
           go tool cover -func=coverage.out
           total=$(go tool cover -func=coverage.out | grep total: | awk '{print substr($3, 1, length($3)-1)}')
