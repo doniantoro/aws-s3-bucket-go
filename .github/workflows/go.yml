@@ -20,18 +20,22 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.23'
+          go-version: "1.23"
 
-      - name: Run Unit Tests
+      - name: Check Code Coverage Threshold
         run: |
-        	go test ./... -cover -v -covermode=count -coverprofile=coverage.out 2>&1 
-	        go tool cover -func=coverage.out
+          go test ./... -cover -v -covermode=count -coverprofile=coverage.out 2>&1
+          go tool cover -func=coverage.out
+          total=$(go tool cover -func=coverage.out | grep total: | awk '{print substr($3, 1, length($3)-1)}')
+          echo "Total Coverage: $total"
+          cov=$(echo "$total >= 80.0" | bc)
+          if [ $cov -ne 1 ]; then
+          echo "❌ Code coverage $total% is below 80%"
+          exit 1
+          fi
 
       - name: Build Go Binary
         run: GOOS=linux GOARCH=amd64 go build -o aws-s3-bucket-go
-
-    
-        
 
   deploy:
     name: Deploy to EC2
@@ -46,7 +50,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.23'
+          go-version: "1.23"
 
       - name: Build Go Binary
         run: GOOS=linux GOARCH=amd64 go build -o aws-s3-bucket-go
