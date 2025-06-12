@@ -53,7 +53,7 @@ func main() {
 		}
 		return c.Next()
 	})
-	
+
 	limitThreshold, _ := strconv.Atoi(os.Getenv("LIMITER_THRESHOLD"))
 	limitExpired, _ := time.ParseDuration(os.Getenv("LIMITER_EXPIRED"))
 
@@ -89,5 +89,9 @@ func main() {
 	// Initialize the upload HTTP handler
 	uploadHttp.NewHandler(v1, multiUsecase, validator)
 
-	log.Fatal(app.Listen(":" + os.Getenv("APP_PORT")))
+	err = app.Listen(":" + os.Getenv("APP_PORT"))
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Printf("Server is running on port %s", os.Getenv("APP_PORT"))
 }
