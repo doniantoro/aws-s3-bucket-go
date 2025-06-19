@@ -53,7 +53,7 @@ func main() {
 		}
 		return c.Next()
 	})
-	
+
 	limitThreshold, _ := strconv.Atoi(os.Getenv("LIMITER_THRESHOLD"))
 	limitExpired, _ := time.ParseDuration(os.Getenv("LIMITER_EXPIRED"))
 
@@ -90,4 +90,5 @@ func main() {
 	uploadHttp.NewHandler(v1, multiUsecase, validator)
 
 	log.Fatal(app.Listen(":" + os.Getenv("APP_PORT")))
+
 }
