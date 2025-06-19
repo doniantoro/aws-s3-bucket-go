@@ -21,7 +21,6 @@ import (
 )
 
 func main() {
-
 	cfg, err := config.LoadDefaultConfig(context.TODO(),
 		config.WithRegion(os.Getenv("REGION_NAME")),
 	)
@@ -53,7 +52,7 @@ func main() {
 		}
 		return c.Next()
 	})
-	
+
 	limitThreshold, _ := strconv.Atoi(os.Getenv("LIMITER_THRESHOLD"))
 	limitExpired, _ := time.ParseDuration(os.Getenv("LIMITER_EXPIRED"))
 
