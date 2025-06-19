@@ -1,0 +1,76 @@
+name: Build & Deploy Go App to EC2
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    name: Build & Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.23"
+
+      - name: Check Code Coverage Threshold
+        run: |
+          go env -w GOEXPERIMENT=nocoverageredesign
+          go test ./... -cover -v -covermode=count -coverprofile=coverage.out 2>&1
+          go tool cover -func=coverage.out
+          total=$(go tool cover -func=coverage.out | grep total: | awk '{print substr($3, 1, length($3)-1)}')
+          echo "Total Coverage: $total"
+          cov=$(echo "$total >= 80.0" | bc)
+          if [ $cov -ne 1 ]; then
+          echo "❌ Code coverage $total% is below 80%"
+          exit 1
+          fi
+
+      - name: Build Go Binary
+        run: GOOS=linux GOARCH=amd64 go build -o aws-s3-bucket-go
+
+  deploy:
+    name: Deploy to EC2
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.23"
+
+      - name: Build Go Binary
+        run: GOOS=linux GOARCH=amd64 go build -o aws-s3-bucket-go
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Upload Binary to EC2
+        run: |
+          ssh ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} 'rm -rf /home/ec2-user/go/src/aws-s3-bucket-go/aws-s3-bucket-go'
+          scp ./aws-s3-bucket-go ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/home/${{ secrets.EC2_USER }}/go/src/aws-s3-bucket-go/aws-s3-bucket-go
+
+      - name: Restart systemd service
+        run: |
+          ssh ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
+            sudo systemctl restart aws-s3-bucket.service
+            sudo systemctl status aws-s3-bucket.service --no-pager
+          EOF
